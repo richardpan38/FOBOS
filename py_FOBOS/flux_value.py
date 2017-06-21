@@ -6,7 +6,7 @@ import pylab as pl
 import sys
 import scipy.ndimage.filters as ndimage
 
-hdulist = fits.open('/Users/RichardP/research/FOBOS/Flux/Samples/acs_I_030mas_088_sci.fits')
+hdulist = fits.open('/Users/RichardP/research/FOBOS/Samples/acs_I_030mas_088_sci.fits')
 
 
 #In degrees!
@@ -306,8 +306,10 @@ for i in range(0,len(fiber5_xcoords)):
 for i in range(0,len(fiber6_xcoords)):
         flux6_values.append(scidata[fiber6_ycoords[i] , fiber6_xcoords[i]])
 
+
+#Summing all the points for each Mini-IFU
+IFU_flux = []     
 fiber_sum = {}
-        
 for i in range(0, len(x_coords)):
         counter0 = i * 293
         counter1 = i * 285
@@ -320,6 +322,14 @@ for i in range(0, len(x_coords)):
         fiber_sum[str(objects_id[i]) + '_fiber4'.format(i)] = sum(flux4_values[counter1 + n] for n in range(285))
         fiber_sum[str(objects_id[i]) + '_fiber5'.format(i)] = sum(flux5_values[counter2 + o] for o in range(282))
         fiber_sum[str(objects_id[i]) + '_fiber6'.format(i)] = sum(flux6_values[counter3 + p] for p in range(283))
+IFU_flux.append(fiber_sum[str(objects_id[9]) + '_fiber0'])
+IFU_flux.append(fiber_sum[str(objects_id[9]) + '_fiber1'])
+IFU_flux.append(fiber_sum[str(objects_id[9]) + '_fiber2'])
+IFU_flux.append(fiber_sum[str(objects_id[9]) + '_fiber3'])
+IFU_flux.append(fiber_sum[str(objects_id[9]) + '_fiber4'])
+IFU_flux.append(fiber_sum[str(objects_id[9]) + '_fiber5'])
+IFU_flux.append(fiber_sum[str(objects_id[9]) + '_fiber6'])
+
 
 
 #Created an array formatted as so to sum flux of each object. 
@@ -348,16 +358,15 @@ test_x = []
 
 test_x =  hdulist[0].data[15338:15438 , 8683:8783]
 # print(np.shape(test_x))
-
-
-print(x_coords[9])
-print(y_coords[9])
 #plt.plot(test_x)
 plt.imshow(test_x, cmap = 'gray')
 plt.colorbar()
 #plt.scatter(plot_y, objects_Imag)
 # plt.plot(objects_Imag)
 plt.show()
+print(IFU_flux)
+print(plot_y[9])
+
 
 
 

@@ -6,7 +6,7 @@ import pylab as pl
 import sys
 import scipy.ndimage.filters as ndimage
 
-hdulist = fits.open('/Users/RichardP/research/FOBOS/Flux/Samples/acs_I_030mas_088_sci.fits')
+hdulist = fits.open('/Users/RichardP/research/FOBOS/Samples/acs_I_030mas_088_sci.fits')
 
 
 #In degrees!
@@ -46,7 +46,7 @@ DEC_max = DEC_ma - outer_radi
 #of the RA and DEC of the specific .fits file
 #Finding only the relevant catalog_RA and catalog_DEC
 
-catalog = fits.open('../../Flux/Samples/photoz_vers2.0_010312_UltraVISTA2016.fits')
+catalog = fits.open('/Users/RichardP/Researc/Samples/photoz_vers2.0_010312_UltraVISTA2016.fits')
 catalog_wcs = wcs.WCS(catalog[1].header)
 catalog_id = catalog[1].data['id']
 catalog_RA = np.array(catalog[1].data['RA'])
@@ -320,44 +320,47 @@ compiled_sum = []
 
 def fwhm2sigma(fwhm):
         return fwhm / np.sqrt(8 * np.log(2))
-range_f = [.5 , .75 , 1.0 , 1.25 , 1.5]
-for f in range_f:
-    FWHM = f
-    sigma1 = fwhm2sigma(FWHM)/A_P
-    gaussian_0 = ndimage.gaussian_filter(flux0_values, sigma = sigma1)
-    gaussian_1 = ndimage.gaussian_filter(flux1_values, sigma = sigma1)
-    gaussian_2 = ndimage.gaussian_filter(flux2_values, sigma = sigma1)
-    gaussian_3 = ndimage.gaussian_filter(flux3_values, sigma = sigma1)
-    gaussian_4 = ndimage.gaussian_filter(flux4_values, sigma = sigma1)
-    gaussian_5 = ndimage.gaussian_filter(flux5_values, sigma = sigma1)
-    gaussian_6 = ndimage.gaussian_filter(flux6_values, sigma = sigma1)
+def smooth_flux(x):
+        IFU_flux = []
+        IFU_sum = []
+        FWHM = fwhm
+        sigma1 = fwhm2sigma(FWHM)/A_P
+        gaussian_0 = ndimage.gaussian_filter(flux0_values, sigma = sigma1)
+        gaussian_1 = ndimage.gaussian_filter(flux1_values, sigma = sigma1)
+        gaussian_2 = ndimage.gaussian_filter(flux2_values, sigma = sigma1)
+        gaussian_3 = ndimage.gaussian_filter(flux3_values, sigma = sigma1)
+        gaussian_4 = ndimage.gaussian_filter(flux4_values, sigma = sigma1)
+        gaussian_5 = ndimage.gaussian_filter(flux5_values, sigma = sigma1)
+        gaussian_6 = ndimage.gaussian_filter(flux6_values, sigma = sigma1)
 
-    fiber_sum = {}
-    i = 9
-    counter0 = i * 293
-    counter1 = i * 285
-    counter2 = i * 282
-    counter3 = i * 283
-    fiber_sum[str(objects_id[i]) + '_fiber0'.format(i)] = sum(gaussian_0[counter0 + j] for j in range(293))
-    fiber_sum[str(objects_id[i]) + '_fiber1'.format(i)] = sum(gaussian_1[counter1 + k] for k in range(285))
-    fiber_sum[str(objects_id[i]) + '_fiber2'.format(i)] = sum(gaussian_2[counter2 + l] for l in range(282))
-    fiber_sum[str(objects_id[i]) + '_fiber3'.format(i)] = sum(gaussian_3[counter3 + m] for m in range(283))
-    fiber_sum[str(objects_id[i]) + '_fiber4'.format(i)] = sum(gaussian_4[counter1 + n] for n in range(285))
-    fiber_sum[str(objects_id[i]) + '_fiber5'.format(i)] = sum(gaussian_5[counter2 + o] for o in range(282))
-    fiber_sum[str(objects_id[i]) + '_fiber6'.format(i)] = sum(gaussian_6[counter3 + p] for p in range(283))
+        fiber_sum = {}
+        i = 9
+        counter0 = i * 293
+        counter1 = i * 285
+        counter2 = i * 282
+        counter3 = i * 283
+        fiber_sum[str(objects_id[i]) + '_fiber0'.format(i)] = sum(gaussian_0[counter0 + j] for j in range(293))
+        fiber_sum[str(objects_id[i]) + '_fiber1'.format(i)] = sum(gaussian_1[counter1 + k] for k in range(285))
+        fiber_sum[str(objects_id[i]) + '_fiber2'.format(i)] = sum(gaussian_2[counter2 + l] for l in range(282))
+        fiber_sum[str(objects_id[i]) + '_fiber3'.format(i)] = sum(gaussian_3[counter3 + m] for m in range(283))
+        fiber_sum[str(objects_id[i]) + '_fiber4'.format(i)] = sum(gaussian_4[counter1 + n] for n in range(285))
+        fiber_sum[str(objects_id[i]) + '_fiber5'.format(i)] = sum(gaussian_5[counter2 + o] for o in range(282))
+        fiber_sum[str(objects_id[i]) + '_fiber6'.format(i)] = sum(gaussian_6[counter3 + p] for p in range(283))
 
-    compiled_flux0.append(float(fiber_sum[str(objects_id[i]) + '_fiber0']))
-    compiled_flux1.append(float(fiber_sum[str(objects_id[i]) + '_fiber1']))
-    compiled_flux2.append(float(fiber_sum[str(objects_id[i]) + '_fiber2']))
-    compiled_flux3.append(float(fiber_sum[str(objects_id[i]) + '_fiber3']))
-    compiled_flux4.append(float(fiber_sum[str(objects_id[i]) + '_fiber4']))
-    compiled_flux5.append(float(fiber_sum[str(objects_id[i]) + '_fiber5']))
-    compiled_flux6.append(float(fiber_sum[str(objects_id[i]) + '_fiber6']))
+        IFU_flux.append(float(fiber_sum[str(objects_id[i]) + '_fiber0']))
+        IFU_flux.append(float(fiber_sum[str(objects_id[i]) + '_fiber1']))
+        IFU_flux.append(float(fiber_sum[str(objects_id[i]) + '_fiber2']))
+        IFU_flux.append(float(fiber_sum[str(objects_id[i]) + '_fiber3']))
+        IFU_flux.append(float(fiber_sum[str(objects_id[i]) + '_fiber4']))
+        IFU_flux.append(float(fiber_sum[str(objects_id[i]) + '_fiber5']))
+        IFU_flux.append(float(fiber_sum[str(objects_id[i]) + '_fiber6']))
 
-    #Created an array formatted as so to sum flux of each object. 
+        #Created an array formatted as so to sum flux of each object. 
 
-    flux_sum = [float(fiber_sum[str(objects_id[i]) + '_fiber0']) , float(fiber_sum[str(objects_id[i]) + '_fiber1']), float(fiber_sum[str(objects_id[i]) + '_fiber2']) , float(fiber_sum[str(objects_id[i]) + '_fiber3']) , float(fiber_sum[str(objects_id[i]) + '_fiber4']) , float(fiber_sum[str(objects_id[i]) + '_fiber5']) , float(fiber_sum[str(objects_id[i]) + '_fiber6'])]
-    compiled_sum.append(float(sum(flux_sum)))
+        flux_sum = [float(fiber_sum[str(objects_id[i]) + '_fiber0']) , float(fiber_sum[str(objects_id[i]) + '_fiber1']), float(fiber_sum[str(objects_id[i]) + '_fiber2']) , float(fiber_sum[str(objects_id[i]) + '_fiber3']) , float(fiber_sum[str(objects_id[i]) + '_fiber4']) , float(fiber_sum[str(objects_id[i]) + '_fiber5']) , float(fiber_sum[str(objects_id[i]) + '_fiber6'])]
+        IFU_sum.append(float(sum(flux_sum)))
+        print(IFU_flux)
+        print(IFU_sum)
 
 
 #Conversions to ABMAG
@@ -369,19 +372,6 @@ def ABMAG_Convert(FluxVals):
         ABMAG_list.append(ABMAG)
 
 
-# #Plotting just a couple objects
-# test_x = []
-
-# test_x =  hdulist[0].data[15338:15438 , 8683:8783]
-# # print(np.shape(test_x))
-
-
-# #plt.plot(test_x)
-# plt.imshow(test_x, cmap = 'gray')
-# plt.colorbar()
-# #plt.scatter(plot_y, objects_Imag)
-# # plt.plot(objects_Imag)
-# plt.show()
 
 
 

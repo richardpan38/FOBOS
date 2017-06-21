@@ -6,7 +6,7 @@ import pylab as pl
 import sys
 import scipy.ndimage.filters as ndimage
 
-hdulist = fits.open('/Users/RichardP/research/FOBOS/Flux/Samples/acs_I_030mas_088_sci.fits')
+hdulist = fits.open('/Users/RichardP/research/FOBO/Samples/acs_I_030mas_088_sci.fits')
 
 
 #In degrees!
@@ -46,7 +46,7 @@ DEC_max = DEC_ma - outer_radi
 #of the RA and DEC of the specific .fits file
 #Finding only the relevant catalog_RA and catalog_DEC
 
-catalog = fits.open('../../Flux/Samples/photoz_vers2.0_010312_UltraVISTA2016.fits')
+catalog = fits.open('/Users/RichardP/Research/FOBOS/Samples/photoz_vers2.0_010312_UltraVISTA2016.fits')
 catalog_wcs = wcs.WCS(catalog[1].header)
 catalog_id = catalog[1].data['id']
 catalog_RA = np.array(catalog[1].data['RA'])
@@ -97,32 +97,7 @@ x_coords = [row[0] for row in objects]
 y_coords = [row[1] for row in objects]
 
 
-#Creating the first inner fiber
-# square_row = []
-# square_column = []
-
-# for i in range(1 , 50):
-#         for j in range(1 , 50):
-#             square_row.append(i)
-#             square_column.append(j)
-# for i in range(len(square_row)):
-#     square_row.append(square_row[i])
-#     square_column.append(-square_column[i])
-# for j in range(len(square_row)):
-#         square_row.append(-square_row[j])
-#         square_column.append(square_column[j])
-# for i in range(1,50):
-#     square_row.append(i)
-#     square_column.append(0)
-#     square_row.append(0)
-#     square_column.append(i)
-#     square_row.append(-i)
-#     square_column.append(0)
-#     square_row.append(0)
-#     square_column.append(-i)
-# square_row.append(0)
-# square_column.append(0)
-
+#Generating the border for the inner Mini-IFU
 circle_row = []
 circle_column = []
 
@@ -138,21 +113,8 @@ for j in range(len(circle_row)):
         circle_row.append(-circle_row[j])
         circle_column.append(circle_column[j])
 
-
-
-# for i in range(1,10):
-#         if 0 <= (i ** 2) <= (radi ** 2):
-#                 circle_row.append(i)
-#                 circle_column.append(0)
-#                 circle_row.append(0)
-#                 circle_column.append(i)
-#                 circle_row.append(-i)
-#                 circle_column.append(0)
-#                 circle_row.append(0)
-#                 circle_column.append(-i)
-# circle_row.append(0)
-# circle_column.append(0)
-
+#Generating the borders for the outer Mini-IFUs
+        
 radi_outer = radi * np.sqrt(7)
 outer_circle_row = []
 outer_circle_column = []
@@ -177,12 +139,8 @@ for j in range(len(outer_circle_row)):
 
 for i in range(0,26):
         if (radi ** 2) < (i ** 2) <= (radi_outer ** 2):
-#                outer_circle_row.append(i)
-#               outer_circle_column.append(0)
                 outer_circle_row.append(0)
                 outer_circle_column.append(i)
-#               outer_circle_row.append(-i)
-#               outer_circle_column.append(0)
                 outer_circle_row.append(0)
                 outer_circle_column.append(-i)
 fiber1_x = []
@@ -255,21 +213,6 @@ fiber5_xcoords = []
 fiber5_ycoords = []
 fiber6_xcoords = []
 fiber6_ycoords = []
-
-object_number = 9
-
-# outer_fiber1_row = [y_coords[object_number] + y for y in fiber1_y]
-# outer_fiber1_column = [x_coords[object_number] + x for x in fiber1_x]
-# outer_fiber2_row = [y_coords[object_number] + y for y in fiber2_y]
-# outer_fiber2_column = [x_coords[object_number] + x for x in fiber2_x]
-# outer_fiber3_row = [y_coords[object_number] + y for y in fiber3_y]
-# outer_fiber3_column = [x_coords[object_number] + x for x in fiber3_x]
-# outer_fiber4_row = [y_coords[object_number] + y for y in fiber4_y]
-# outer_fiber4_column = [x_coords[object_number] + x for x in fiber4_x]
-# outer_fiber5_row = [y_coords[object_number] + y for y in fiber5_y]
-# outer_fiber5_column = [x_coords[object_number] + x for x in fiber5_x]
-# outer_fiber6_row = [y_coords[object_number] + y for y in fiber6_y]
-# outer_fiber6_column = [x_coords[object_number] + x for x in fiber6_x]
 outer_fiber1_row = [50 + y for y in fiber1_y]
 outer_fiber1_column = [50 + x for x in fiber1_x]
 outer_fiber2_row = [50 + y for y in fiber2_y]
@@ -294,17 +237,6 @@ fiber5_xcoords.extend(outer_fiber5_column)
 fiber5_ycoords.extend(outer_fiber5_row)
 fiber6_xcoords.extend(outer_fiber6_column)
 fiber6_ycoords.extend(outer_fiber6_row)
-# plt.scatter(fiber1_x, fiber1_y)
-# plt.scatter(fiber2_x, fiber2_y)
-# plt.scatter(fiber3_x, fiber3_y)
-# plt.scatter(fiber4_x, fiber4_y)
-# plt.scatter(fiber5_x, fiber5_y)
-# plt.scatter(fiber6_x, fiber6_y)
-# plt.scatter(circle_column, circle_row)
-# plt.show()
-# sys.exit()
-
-
 
 #Generating all the x,y coordinates for each object
 
@@ -326,13 +258,6 @@ plt.scatter(fiber3_xcoords, fiber3_ycoords)
 plt.scatter(fiber4_xcoords, fiber4_ycoords)
 plt.scatter(fiber5_xcoords, fiber5_ycoords)
 plt.scatter(fiber6_xcoords, fiber6_ycoords)
-#for object_number in range(0, len(x_coords)):
-#        fiber_row = [y_coords[object_number] + y for y in square_row]
-#        fiber_column = [x_coords[object_number] + x for x in square_column]
-#        fiber0_xcoords.append(x_coords[object_number])
-#        fiber0_ycoords.append(y_coords[object_number])
-#        fiber0_xcoords.extend(fiber_column)
-#        fiber0_ycoords.extend(fiber_row)
         
 #8733
 #15388
@@ -342,68 +267,21 @@ flux0_gaussian = hdulist[0].data[15338:15438 , 8683:8783]
 #Gaussian Smoothing for first point
 def fwhm2sigma(fwhm):
         return fwhm / np.sqrt(8 * np.log(2))
-FWHM = .5
-sigma1 = fwhm2sigma(FWHM)/A_P
-gaussian_0 = ndimage.gaussian_filter(flux0_gaussian, sigma = sigma1)
-plt.imshow(gaussian_0, cmap = 'gray')
-plt.colorbar()
-plt.show()
 
-FWHM = .75
-sigma1 = fwhm2sigma(FWHM)/A_P
-gaussian_0 = ndimage.gaussian_filter(flux0_gaussian, sigma = sigma1)
-plt.scatter(fiber0_xcoords, fiber0_ycoords)
-plt.scatter(fiber1_xcoords, fiber1_ycoords)
-plt.scatter(fiber2_xcoords, fiber2_ycoords)
-plt.scatter(fiber3_xcoords, fiber3_ycoords)
-plt.scatter(fiber4_xcoords, fiber4_ycoords)
-plt.scatter(fiber5_xcoords, fiber5_ycoords)
-plt.scatter(fiber6_xcoords, fiber6_ycoords)
-plt.imshow(gaussian_0, cmap = 'gray')
-plt.colorbar()
-plt.show()
-
-FWHM = 1
-sigma1 = fwhm2sigma(FWHM)/A_P
-gaussian_0 = ndimage.gaussian_filter(flux0_gaussian, sigma = sigma1)
-plt.scatter(fiber0_xcoords, fiber0_ycoords)
-plt.scatter(fiber1_xcoords, fiber1_ycoords)
-plt.scatter(fiber2_xcoords, fiber2_ycoords)
-plt.scatter(fiber3_xcoords, fiber3_ycoords)
-plt.scatter(fiber4_xcoords, fiber4_ycoords)
-plt.scatter(fiber5_xcoords, fiber5_ycoords)
-plt.scatter(fiber6_xcoords, fiber6_ycoords)
-plt.imshow(gaussian_0, cmap = 'gray')
-plt.colorbar()
-plt.show()
-
-FWHM = 1.25
-sigma1 = fwhm2sigma(FWHM)/A_P
-gaussian_0 = ndimage.gaussian_filter(flux0_gaussian, sigma = sigma1)
-plt.scatter(fiber0_xcoords, fiber0_ycoords)
-plt.scatter(fiber1_xcoords, fiber1_ycoords)
-plt.scatter(fiber2_xcoords, fiber2_ycoords)
-plt.scatter(fiber3_xcoords, fiber3_ycoords)
-plt.scatter(fiber4_xcoords, fiber4_ycoords)
-plt.scatter(fiber5_xcoords, fiber5_ycoords)
-plt.scatter(fiber6_xcoords, fiber6_ycoords)
-plt.imshow(gaussian_0, cmap = 'gray')
-plt.colorbar()
-plt.show()
-
-FWHM = 1.5
-sigma1 = fwhm2sigma(FWHM)/A_P
-gaussian_0 = ndimage.gaussian_filter(flux0_gaussian, sigma = sigma1)
-plt.scatter(fiber0_xcoords, fiber0_ycoords)
-plt.scatter(fiber1_xcoords, fiber1_ycoords)
-plt.scatter(fiber2_xcoords, fiber2_ycoords)
-plt.scatter(fiber3_xcoords, fiber3_ycoords)
-plt.scatter(fiber4_xcoords, fiber4_ycoords)
-plt.scatter(fiber5_xcoords, fiber5_ycoords)
-plt.scatter(fiber6_xcoords, fiber6_ycoords)
-plt.imshow(gaussian_0, cmap = 'gray')
-plt.colorbar()
-plt.show()
+def smoothing(x):
+       FWHM = x
+       sigma1 = fwhm2sigma(FWHM)/A_P
+       gaussian_0 = ndimage.gaussian_filter(flux0_gaussian, sigma = sigma1)
+       plt.scatter(fiber0_xcoords, fiber0_ycoords)
+       plt.scatter(fiber1_xcoords, fiber1_ycoords)
+       plt.scatter(fiber2_xcoords, fiber2_ycoords)
+       plt.scatter(fiber3_xcoords, fiber3_ycoords)
+       plt.scatter(fiber4_xcoords, fiber4_ycoords)
+       plt.scatter(fiber5_xcoords, fiber5_ycoords)
+       plt.scatter(fiber6_xcoords, fiber6_ycoords)
+       plt.imshow(gaussian_0, cmap = 'gray')
+       plt.colorbar()
+       plt.show()
 
 #Conversions to ABMAG
 def ABMAG_Convert(FluxVals):
@@ -414,20 +292,6 @@ def ABMAG_Convert(FluxVals):
         ABMAG_list.append(ABMAG)
         
 
-
-#Plotting just a couple objects
-test_x = []
-
-#test_x = hdulist[0].data[15290:15544 , 6700:6954].tolist()
-# print(np.shape(test_x))
-
-#print(x_coords[0])
-#print(y_coords[0])
-#plt.plot(test_gaussian)
-#plt.colorbar()
-#plt.scatter(plot_y, objects_Imag)
-# plt.plot(objects_Imag)
-#plt.show()
 
 
 
