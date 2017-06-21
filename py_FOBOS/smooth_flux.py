@@ -46,7 +46,7 @@ DEC_max = DEC_ma - outer_radi
 #of the RA and DEC of the specific .fits file
 #Finding only the relevant catalog_RA and catalog_DEC
 
-catalog = fits.open('/Users/RichardP/Researc/Samples/photoz_vers2.0_010312_UltraVISTA2016.fits')
+catalog = fits.open('/Users/RichardP/Research/FOBOS/Samples/photoz_vers2.0_010312_UltraVISTA2016.fits')
 catalog_wcs = wcs.WCS(catalog[1].header)
 catalog_id = catalog[1].data['id']
 catalog_RA = np.array(catalog[1].data['RA'])
@@ -323,7 +323,7 @@ def fwhm2sigma(fwhm):
 def smooth_flux(x):
         IFU_flux = []
         IFU_sum = []
-        FWHM = fwhm
+        FWHM = x
         sigma1 = fwhm2sigma(FWHM)/A_P
         gaussian_0 = ndimage.gaussian_filter(flux0_values, sigma = sigma1)
         gaussian_1 = ndimage.gaussian_filter(flux1_values, sigma = sigma1)
@@ -361,8 +361,6 @@ def smooth_flux(x):
         IFU_sum.append(float(sum(flux_sum)))
         print(IFU_flux)
         print(IFU_sum)
-
-
 #Conversions to ABMAG
 def ABMAG_Convert(FluxVals):
     ABMAG_list = []

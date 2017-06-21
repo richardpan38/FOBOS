@@ -6,7 +6,7 @@ import pylab as pl
 import sys
 import scipy.ndimage.filters as ndimage
 
-hdulist = fits.open('/Users/RichardP/research/FOBO/Samples/acs_I_030mas_088_sci.fits')
+hdulist = fits.open('/Users/RichardP/research/FOBOS/Samples/acs_I_030mas_088_sci.fits')
 
 
 #In degrees!
@@ -239,7 +239,7 @@ fiber6_xcoords.extend(outer_fiber6_column)
 fiber6_ycoords.extend(outer_fiber6_row)
 
 #Generating all the x,y coordinates for each object
-
+object_number = 9
 object_x_coords = []
 object_y_coords = []
 fiber0_xcoords = []
