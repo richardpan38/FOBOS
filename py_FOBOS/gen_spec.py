@@ -509,8 +509,10 @@ class gen_spectra:
                 self.border_fiber0_xcoords.extend(fiber0_border_column)
                 self.border_fiber0_ycoords.extend(fiber0_border_row)
         def fwhm2sigma(self, fwhm):
+                self.fwhm = fwhm
                 return fwhm / np.sqrt(8 * np.log(2))
         def smoothing(self, fwhm):
+                self.fwhm = fwhm
                 self.sigma1 = self.fwhm2sigma(fwhm)/self.A_P
                 self.smoothed_image = ndimage.gaussian_filter(self.box_image, sigma = self.sigma1)
                 self.smoothed_IFU_flux = []
@@ -567,14 +569,14 @@ class gen_spectra:
                 plt.colorbar()
                 plt.show()
         def smooth_flux(self):
-                print("Smoothed_IFU_Flux0_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux0[self.target_index]))
-                print("Smoothed_IFU_Flux1_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux1[self.target_index]))
-                print("Smoothed_IFU_Flux2_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux2[self.target_index]))
-                print("Smoothed_IFU_Flux3_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux3[self.target_index]))
-                print("Smoothed_IFU_Flux4_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux4[self.target_index]))
-                print("Smoothed_IFU_Flux5_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux5[self.target_index]))
-                print("Smoothed_IFU_Flux6_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux6[self.target_index]))
-                print("Smoothed_IFU_sum_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_sum[self.target_index]))
+                print(str(self.fwhm) + "_Smoothed_IFU_Flux0_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux0[self.target_index]))
+                print(str(self.fwhm) + "_Smoothed_IFU_Flux1_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux1[self.target_index]))
+                print(str(self.fwhm) + "_Smoothed_IFU_Flux2_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux2[self.target_index]))
+                print(str(self.fwhm) + "_Smoothed_IFU_Flux3_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux3[self.target_index]))
+                print(str(self.fwhm) + "_Smoothed_IFU_Flux4_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux4[self.target_index]))
+                print(str(self.fwhm) + "_Smoothed_IFU_Flux5_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux5[self.target_index]))
+                print(str(self.fwhm) + "_Smoothed_IFU_Flux6_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux6[self.target_index]))
+                print(str(self.fwhm) + "_Smoothed_IFU_sum_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_sum[self.target_index]))
         def flux_Imag_plot(self, object_flux):
                 objects_Imag = self.objects_Imag.tolist()
                 for i in range(0, len(object_flux)):
