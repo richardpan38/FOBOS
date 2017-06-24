@@ -2,6 +2,7 @@ Samples
 *.py~
 *.ipynb_checkpoints
 *__pycache__*
+.gitignore~
 
 # Compiled source #
 ###################

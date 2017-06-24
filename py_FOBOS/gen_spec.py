@@ -344,6 +344,7 @@ class gen_spectra:
 #Plotting just a couple objects
         def graph_image(self, image):
                 plt.imshow(image, cmap = 'gray')
+                plt.gca().invert_yaxis()
                 plt.colorbar()
                 plt.show()
         def ABMAG_Convert(self, FluxVals):
@@ -566,6 +567,7 @@ class gen_spectra:
                 plt.scatter(self.border_fiber5_xcoords, self.border_fiber5_ycoords)
                 plt.scatter(self.border_fiber6_xcoords, self.border_fiber6_ycoords)
                 plt.imshow(image , cmap = 'gray')
+                plt.gca().invert_yaxis()
                 plt.colorbar()
                 plt.show()
         def smooth_flux(self):
