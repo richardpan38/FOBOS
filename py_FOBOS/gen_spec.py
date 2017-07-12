@@ -20,6 +20,8 @@ class gen_spectra:
                 xy_max = int(self.radi/(np.sqrt(2)))
                 self.radi_outer = self.radi * np.sqrt(7)
 
+                #Target_index will be 0 for now in case we aren't looking at specific targets. 
+                self.target_index = 0
                 #Each pixel
                 self.scidata = self.hdulist[0].data
 
@@ -580,6 +582,8 @@ class gen_spectra:
         #         print(str(self.fwhm) + "_Smoothed_IFU_sum_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_sum[self.target_index]))
         def normalization(self, mag1, flux1, flux2):
                 self.mag2 = mag1 + (-2.5 *np.log10(flux1/flux2))
+        def renormalization(self, mag1, mag2, flux2):
+                self.flux1val = (flux2 * (10 ** ((mag1 - mag2)/ -2.5)))
 
 
 
