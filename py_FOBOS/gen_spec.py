@@ -91,8 +91,8 @@ class gen_spectra:
                 self.objects = self.objects.astype(int)
                 self.x_coords = [row[0] for row in self.objects]
                 self.y_coords = [row[1] for row in self.objects]
-        def target_image(self):
-                self.box_image = self.scidata[(self.y_coords[self.target_index] - 50):(self.y_coords[self.target_index] + 50), (self.x_coords[self.target_index] - 50): (self.x_coords[self.target_index] + 50)]
+        def target_image(self, fits_plot):
+                self.box_image = fits_plot[(self.y_coords[self.target_index] - 50):(self.y_coords[self.target_index] + 50), (self.x_coords[self.target_index] - 50): (self.x_coords[self.target_index] + 50)]
         def overplotting(self):
                 #Creating the first inner fiber
                 circle_row = []
@@ -326,20 +326,12 @@ class gen_spectra:
                         self.IFU_flux4.append(self.fiber_sum[str(self.objects_id[i]) + '_fiber4'])
                         self.IFU_flux5.append(self.fiber_sum[str(self.objects_id[i]) + '_fiber5'])
                         self.IFU_flux6.append(self.fiber_sum[str(self.objects_id[i]) + '_fiber6'])
-                print("Mini-IFU0_Flux_" + str(self.objects_id[self.target_index]) + ": " + str(self.IFU_flux0[self.target_index]))
-                print("Mini-IFU1_Flux_" + str(self.objects_id[self.target_index]) + ": " + str(self.IFU_flux1[self.target_index]))
-                print("Mini-IFU2_Flux_" + str(self.objects_id[self.target_index]) + ": " + str(self.IFU_flux2[self.target_index]))
-                print("Mini-IFU3_Flux_" + str(self.objects_id[self.target_index]) + ": " + str(self.IFU_flux3[self.target_index]))
-                print("Mini-IFU4_Flux_" + str(self.objects_id[self.target_index]) + ": " + str(self.IFU_flux4[self.target_index]))
-                print("Mini-IFU5_Flux_" + str(self.objects_id[self.target_index]) + ": " + str(self.IFU_flux5[self.target_index]))
-                print("Mini-IFU6_Flux_" + str(self.objects_id[self.target_index]) + ": " + str(self.IFU_flux6[self.target_index]))
 #Integrate Flux values
         def int_flux(self):
                 self.IFU_sum = []
                 for i in range(0, len(self.objects_id)):
                         flux_sum = [float(self.fiber_sum[str(self.objects_id[i]) + '_fiber0']) , float(self.fiber_sum[str(self.objects_id[i]) + '_fiber1']), float(self.fiber_sum[str(self.objects_id[i]) + '_fiber2']) , float(self.fiber_sum[str(self.objects_id[i]) + '_fiber3']) , float(self.fiber_sum[str(self.objects_id[i]) + '_fiber4']) , float(self.fiber_sum[str(self.objects_id[i]) + '_fiber5']) , float(self.fiber_sum[str(self.objects_id[i]) + '_fiber6'])]
                         self.IFU_sum.append(sum(flux_sum))
-                print("Int_Flux_" + str(self.objects_id[self.target_index]) + ": " + str(self.IFU_sum[self.target_index]))
 
 #Plotting just a couple objects
         def graph_image(self, image):
@@ -352,10 +344,15 @@ class gen_spectra:
                         FluxVals = eval(FluxVals)
                 self.ABMAG_list = []
                 for i in range(0, len(FluxVals)):
-                        temp = abs(FluxVals[i]) /4
-                        ABMAG =  ((-2.5 * np.log(temp)) +23.9)
+                        ABMAG =  ((-2.5 * np.log10(FluxVals[i])) +23.9)
                         self.ABMAG_list.append(ABMAG)
-                print(str(self.objects_id[self.target_index]) + "_IMag: " + str(self.ABMAG_list[self.target_index]))
+        def Flux_Convert(self, ABMAGVals):
+                if isinstance(ABMAGVals, str):
+                        ABMAGVals = eval(ABMAGVals)
+                self.Flux_list = []
+                for i in range(0, len(ABMAGVals)):
+                        FluxVals = 10 ** ((ABMAGVals[i] - 23.9)/(-2.5))
+                        self.Flux_list.append(FluxVals)
         def border_plot(self):
                 #Generating the border for the inner Mini-IFU
                 border_row = []
@@ -512,10 +509,12 @@ class gen_spectra:
         def fwhm2sigma(self, fwhm):
                 self.fwhm = fwhm
                 return fwhm / np.sqrt(8 * np.log(2))
-        def smoothing(self, fwhm):
+        def smooth(self, fwhm):
                 self.fwhm = fwhm
                 self.sigma1 = self.fwhm2sigma(fwhm)/self.A_P
-                self.smoothed_image = ndimage.gaussian_filter(self.box_image, sigma = self.sigma1)
+                self.smoothed_image = ndimage.gaussian_filter(self.scidata, sigma = self.sigma1)
+                self.target_image(self.smoothed_image)
+        def smoothing(self, fwhm):
                 self.smoothed_IFU_flux = []
                 self.smoothed_IFU_sum = []
                 gaussian_0 = ndimage.gaussian_filter(self.flux0_values, sigma = self.sigma1)
@@ -570,22 +569,17 @@ class gen_spectra:
                 plt.gca().invert_yaxis()
                 plt.colorbar()
                 plt.show()
-        def smooth_flux(self):
-                print(str(self.fwhm) + "_Smoothed_IFU_Flux0_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux0[self.target_index]))
-                print(str(self.fwhm) + "_Smoothed_IFU_Flux1_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux1[self.target_index]))
-                print(str(self.fwhm) + "_Smoothed_IFU_Flux2_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux2[self.target_index]))
-                print(str(self.fwhm) + "_Smoothed_IFU_Flux3_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux3[self.target_index]))
-                print(str(self.fwhm) + "_Smoothed_IFU_Flux4_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux4[self.target_index]))
-                print(str(self.fwhm) + "_Smoothed_IFU_Flux5_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux5[self.target_index]))
-                print(str(self.fwhm) + "_Smoothed_IFU_Flux6_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux6[self.target_index]))
-                print(str(self.fwhm) + "_Smoothed_IFU_sum_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_sum[self.target_index]))
-        def flux_Imag_plot(self, object_flux):
-                objects_Imag = self.objects_Imag.tolist()
-                for i in range(0, len(object_flux)):
-                        fac = abs(object_flux[i]) /4
-                        ABMAG =  ((-2.5 * np.log(temp)) +23.9)
-                        plot_imag.append(ABMAG)
-                        plt.scatter(objects_Imag,  plot_imag)
+        # def smooth_flux(self):
+        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux0_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux0[self.target_index]))
+        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux1_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux1[self.target_index]))
+        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux2_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux2[self.target_index]))
+        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux3_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux3[self.target_index]))
+        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux4_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux4[self.target_index]))
+        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux5_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux5[self.target_index]))
+        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux6_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux6[self.target_index]))
+        #         print(str(self.fwhm) + "_Smoothed_IFU_sum_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_sum[self.target_index]))
+        def normalization(self, mag1, flux1, flux2):
+                self.mag2 = mag1 + (-2.5 *np.log10(flux1/flux2))
 
 
 
