@@ -3,7 +3,9 @@ from astropy.io import fits
 from astropy import wcs
 import matplotlib.pyplot as plt
 import scipy.ndimage.filters as ndimage
-class gen_spectra:
+import specsim.simulator
+import random
+class fobos_sim:
         def __init__(self, fits_tile):
                 self.hdulist = fits.open(fits_tile)
                 #In degrees!
@@ -584,7 +586,44 @@ class gen_spectra:
                 self.mag2 = mag1 + (-2.5 *np.log10(flux1/flux2))
         def renormalization(self, mag1, mag2, flux2):
                 self.flux1val = (flux2 * (10 ** ((mag1 - mag2)/ -2.5)))
-
+        def mag_organization(self):
+                self.Mag0 = []
+                self.Mag1 = []
+                self.Mag2 = []
+                self.Mag3 = []
+                self.Mag4 = []
+                self.Mag5 = []
+                self.Mag6 = []
+                for i in range(0,71):
+                    self.ABMAG_Convert(self.smoothed_IFU_flux0)
+                    self.Mag0.append(self.ABMAG_list[self.target_indexes[i]])
+                for i in range(0,71):
+                    self.ABMAG_Convert(self.smoothed_IFU_flux1)
+                    self.Mag1.append(self.ABMAG_list[self.target_indexes[i]])
+                for i in range(0,71):
+                    self.ABMAG_Convert(self.smoothed_IFU_flux2)
+                    self.Mag2.append(self.ABMAG_list[self.target_indexes[i]])
+                for i in range(0,71):
+                    self.ABMAG_Convert(self.smoothed_IFU_flux3)
+                    self.Mag3.append(self.ABMAG_list[self.target_indexes[i]])
+                for i in range(0,71):
+                    self.ABMAG_Convert(self.smoothed_IFU_flux4)
+                    self.Mag4.append(self.ABMAG_list[self.target_indexes[i]])
+                for i in range(0,71):
+                    self.ABMAG_Convert(self.smoothed_IFU_flux5)
+                    self.Mag5.append(self.ABMAG_list[self.target_indexes[i]])
+                for i in range(0,71):
+                    self.ABMAG_Convert(self.smoothed_IFU_flux6)
+                    self.Mag6.append(self.ABMAG_list[self.target_indexes[i]])
+        def gen_spectra(self, yamlpath, number_fibers, spectra_number, redshift_in, redshift_out, abmag_out):
+                self.fobos = {}
+                for i in range(0,spectra_number):
+                    desi = specsim.simulator.Simulator( yamlpath, num_fibers = number_fibers)
+                    rand_int = round(random.uniform(redshift_out - .5, redshift_out + .5), 3)
+                    desi.source.update_in("qso_z0", "perfect", desi.source.wavelength_in, desi.source.flux_in, z_in= redshift_in)
+                    desi.source.update_out(z_out = rand_int, filter_name = "sdss2010-i", ab_magnitude_out = abmag_out)
+                    desi.simulate()
+                    self.fobos[str(i).format(i)] = desi
 
 
                
