@@ -5,8 +5,10 @@ import matplotlib.pyplot as plt
 import scipy.ndimage.filters as ndimage
 import specsim.simulator
 import random
+from astropy.table import Column
+import sys
 class fobos_sim:
-        def __init__(self, fits_tile):
+        def __init__(self, fits_tile, aperture, fibers):
                 self.hdulist = fits.open(fits_tile)
                 #In degrees!
                 RA = self.hdulist[0].header['RA_Targ']
@@ -41,6 +43,7 @@ class fobos_sim:
                 self.RA_max = RA_ma - self.outer_radi
                 self.DEC_min = DEC_m + self.outer_radi
                 self.DEC_max = DEC_ma - self.outer_radi
+                self.hdulist.close()
 
 
 #From the catalog find all the targets within the range of the image
@@ -573,15 +576,6 @@ class fobos_sim:
                 plt.gca().invert_yaxis()
                 plt.colorbar()
                 plt.show()
-        # def smooth_flux(self):
-        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux0_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux0[self.target_index]))
-        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux1_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux1[self.target_index]))
-        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux2_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux2[self.target_index]))
-        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux3_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux3[self.target_index]))
-        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux4_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux4[self.target_index]))
-        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux5_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux5[self.target_index]))
-        #         print(str(self.fwhm) + "_Smoothed_IFU_Flux6_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_flux6[self.target_index]))
-        #         print(str(self.fwhm) + "_Smoothed_IFU_sum_" + str(self.objects_id[self.target_index]) + ": " +  str(self.smoothed_IFU_sum[self.target_index]))
         def normalization(self, mag1, flux1, flux2):
                 self.mag2 = mag1 + (-2.5 *np.log10(flux1/flux2))
         def renormalization(self, mag1, mag2, flux2):
@@ -615,6 +609,8 @@ class fobos_sim:
                 for i in range(0,71):
                     self.ABMAG_Convert(self.smoothed_IFU_flux6)
                     self.Mag6.append(self.ABMAG_list[self.target_indexes[i]])
+
+        #Using DESI code we will simulate spectra using source.update_in  and source.update_out
         def gen_spectra(self, yamlpath, number_fibers, spectra_number, redshift_in, redshift_out, abmag_out):
                 self.fobos = {}
                 for i in range(0,spectra_number):
@@ -624,8 +620,333 @@ class fobos_sim:
                     desi.source.update_out(z_out = rand_int, filter_name = "sdss2010-i", ab_magnitude_out = abmag_out)
                     desi.simulate()
                     self.fobos[str(i).format(i)] = desi
+        
+#Using desi.plot() function to plot noisy spectra
+#Creating a 7X1 plot of one spectra and 7 fibers of noisy spectra
 
 
+        def noisy_spectra(self, spectra=0, fiber=0, wavelength_min=None, wavelength_max=None,
+             title=None, min_electrons=2.5):
+             self.noisy_spectra1 = self.fobos[str(spectra)]
+             if fiber < 0 or fiber >= self.noisy_spectra1.num_fibers:
+                 raise ValueError('Requested fiber is out of range.')
+             if title is None:
+                 title = (
+                     'Fiber={0}, X={1}, t={2}'
+                     .format(fiber, self.noisy_spectra1.atmosphere.airmass,
+                             self.noisy_spectra1.observation.exposure_time))
+             plot_simulation(self.noisy_spectra1.simulated, self.noisy_spectra1.camera_output, fiber, wavelength_min, wavelength_max, title, min_electrons)
+
+
+def plot_simulation(simulated, camera_output, fiber=0, wavelength_min=None,
+                  wavelength_max=None, title=None, min_electrons=2.5,
+                  figsize=(11, 8.5), label_size='medium'):
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Rectangle
+
+        fig, (ax1, ax3, ax4) = plt.subplots(3, 1, figsize=figsize, sharex=True)
+        if title is not None:
+            ax1.set_title(title)
+
+        waveunit = '{0:Generic}'.format(simulated['wavelength'].unit)
+        fluxunit = '{0:Generic}'.format(simulated['source_flux'].unit)
+        wave = simulated['wavelength'].data
+        dwave = np.gradient(wave)
+
+        # Validate the optional wavelength limits and convert to waveunit.
+        def validate(name, limit):
+            if limit is None:
+                return limit
+            try:
+                return limit.to(waveunit).value
+            except AttributeError:
+                raise ValueError('Missing unit for {0}.'.format(name))
+            except u.UnitConversionError:
+                raise ValueError('Invalid unit for {0}.'.format(name))
+        wavelength_min = validate('wavelength_min', wavelength_min)
+        wavelength_max = validate('wavelength_max', wavelength_max)
+        if wavelength_min and wavelength_max and wavelength_min >= wavelength_max:
+            raise ValueError('Expected wavelength_min < wavelength_max.')
+
+        # Create a helper function that returns a slice that limits the
+        # wavelength array w (with units) to wavelenth_min <= w <= wavelength_max.
+        # Returns None if all w < wavelength_min or all w > wavelength_max.
+        def get_slice(w):
+            assert np.all(np.diff(w) > 0)
+            if wavelength_min is None:
+                start = 0
+            elif wavelength_min > w[-1]:
+                return None
+            else:
+                start = np.where(w >= wavelength_min)[0][0]
+            if wavelength_max is None:
+                stop = len(w)
+            elif wavelength_max < w[0]:
+                return None
+            else:
+                stop = np.where(w <= wavelength_max)[0][-1] + 1
+            return slice(start, stop)
+
+        # Trim the full wavelength grid.
+        waves = get_slice(wave)
+        if waves is None:
+            raise ValueError('Wavelength limits do not overlap simulation grid.')
+        wave = wave[waves]
+        dwave = dwave[waves]
+
+        # Plot fluxes above the atmosphere and into the fiber.
+
+        src_flux = simulated['source_flux'][waves, fiber]
+        src_fiber_flux = simulated['source_fiber_flux'][waves, fiber]
+        sky_fiber_flux = simulated['sky_fiber_flux'][waves, fiber]
+
+        ymin, ymax = 0.1 * np.min(src_flux), 10. * np.max(src_flux)
+        if ymin <= 0:
+            # Need ymin > 0 for log scale.
+            ymin = 1e-3 * ymax
+
+        line, = ax1.plot(wave, src_flux, 'r-')
+        ax1.fill_between(wave, src_fiber_flux + sky_fiber_flux,
+                         ymin, color='b', alpha=0.2, lw=0)
+        ax1.fill_between(wave, src_fiber_flux, ymin, color='r', alpha=0.2, lw=0)
+
+        # This kludge is because the label arg to fill_between() does not
+        # propagate to legend() in matplotlib < 1.5.
+        sky_fill = Rectangle((0, 0), 1, 1, fc='b', alpha=0.2)
+        src_fill = Rectangle((0, 0), 1, 1, fc='r', alpha=0.2)
+        ax1.legend(
+            (line, sky_fill, src_fill),
+            ('Source above atmosphere', 'Sky into fiber', 'Source into fiber'),
+            loc='best', fancybox=True, framealpha=0.5, ncol=3, fontsize=label_size)
+
+        ax1.set_ylim(ymin, ymax)
+        ax1.set_yscale('log')
+        ax1.set_ylabel('Flux [{0}]'.format(fluxunit))
+
+        # Plot numbers of photons into the fiber.
+
+        nsky = simulated['num_sky_photons'][waves, fiber] / dwave
+        nsrc = simulated['num_source_photons'][waves, fiber] / dwave
+        nmax = np.max(nsrc)
+
+        # Plot numbers of electrons detected by each CCD.
+        
+                
+        output = camera_output
+        for i in range(1 , len(camera_output) - 1):
+                #Minimize the overlap between camera to camera
+                
+                average_low  = (output[i]['wavelength'][0] + output[i-1]['wavelength'][-1]) / 2
+                average_high = (output[i]['wavelength'][-1] + output[i+1]['wavelength'][0]) / 2
+                overlap_high = np.where(output[i]['wavelength'] > average_high)
+                overlap_low = np.where(output[i]['wavelength'] < average_low)
+                overlap = np.hstack((overlap_low,overlap_high))
+                cwave = output[i]['wavelength'].data
+                
+                dwave = np.gradient(cwave)
+                # Trim to requested wavelength range.
+                waves = get_slice(cwave)
+                if waves is None:
+                    # Skip any cameras outside the requested wavelength range.
+                    continue
+                cwave = cwave[waves]
+                dwave = dwave[waves]
+                nsky = output[i]['num_sky_electrons'][waves, fiber] / dwave
+                nsrc = output[i]['num_source_electrons'][waves, fiber] / dwave
+                ndark = output[i]['num_dark_electrons'][waves, fiber] / dwave
+                read_noise = (
+                    output[i]['read_noise_electrons'][waves, fiber] / np.sqrt(dwave))
+                
+                total_noise = (
+                    output[i]['flux_calibration'][waves,fiber] * np.sqrt(output[i]['variance_electrons'][waves, fiber] / dwave))
+                
+                noisy_spectra = np.zeros((len(output[i-1]['wavelength']), 1))
+                nmax = max(nmax, np.max(nsrc))
+                noisy_spectra = output[i]['flux_calibration'][waves,fiber] * ((output[i]['num_source_electrons'][waves,fiber] + np.random.normal(np.sqrt(output[i]['variance_electrons'][waves,fiber]))) / dwave)
+
+                cwave = np.delete(cwave, overlap) 
+                nsky = np.delete(nsky, overlap)
+                read_noise = np.delete(read_noise, overlap)
+                total_noise = np.delete(total_noise, overlap)
+                noisy_spectra = np.delete(noisy_spectra, overlap)
+                
+                ndark_noisy = output[i]['flux_calibration'][waves,fiber] * ndark
+                nsrc_noisy = output[i]['flux_calibration'][waves,fiber] * nsrc
+
+                nsrc = np.delete(nsrc, overlap)
+                ndark = np.delete(ndark, overlap)
+                ndark_noisy = np.delete(ndark_noisy, overlap)
+                nsrc_noisy = np.delete(nsrc_noisy, overlap)
+
+                ax3.fill_between(
+                    cwave, ndark + nsky + nsrc, min_electrons, color='b',
+                    alpha=0.2, lw=0)
+                ax3.fill_between(
+                    cwave, ndark + nsrc, min_electrons, color='r', alpha=0.2, lw=0)
+                ax3.fill_between(
+                    cwave, ndark, min_electrons, color='k', alpha=0.2, lw=0)
+                ax3.scatter(cwave, total_noise, color='k', lw=0., s=0.5, alpha=0.5)
+                
+                ax4.fill_between(
+                    cwave, ndark_noisy + nsrc_noisy, ymin, color='r', alpha=0.2, lw=0)
+                ax4.scatter(cwave, total_noise, color='k', lw=0., s=0.5, alpha=0.5)
+
+                line2, = ax3.plot(cwave, read_noise, color='k', ls='--', alpha=0.5)
+
+                line3, = ax4.plot(cwave, noisy_spectra, color='r')
+
+        #Plotting the first and last camera's "manually" 
+                average_high  = (output[0]['wavelength'][-1] + output[1]['wavelength'][0]) / 2
+                average_lown= (output[-2]['wavelength'][-1] + output[-1]['wavelength'][0]) / 2
+                overlap_high = np.where(output[0]['wavelength'] > average_high)
+                overlap_low = np.where(output[-1]['wavelength'] < average_low)
+                cwave = output[0]['wavelength'].data
+                cwave_low = output[-1]['wavelength'].data
+                dwave = np.gradient(cwave)
+                dwave_low = np.gradient(cwave_low)
+                # Trim to requested wavelength range.
+                waves = get_slice(cwave)
+                if waves is None:
+                    # Skip any cameras outside the requested wavelength range.
+                    continue
+                cwave = cwave[waves]
+                dwave = dwave[waves]
+                cwave_low = cwave_low[waves]
+                dwave_low = dwave_low[waves]
+
+                #First Camera
+
+                nsky = output[0]['num_sky_electrons'][waves, fiber] / dwave
+                nsrc = output[0]['num_source_electrons'][waves, fiber] / dwave
+                ndark = output[0]['num_dark_electrons'][waves, fiber] / dwave
+                read_noise = (
+                    output[0]['read_noise_electrons'][waves, fiber] / np.sqrt(dwave))
+
+                total_noise = (
+                    output[0]['flux_calibration'][waves,fiber] * np.sqrt(output[0]['variance_electrons'][waves, fiber] / dwave))
+
+                noisy_spectra = np.zeros((len(output[i-1]['wavelength']), 1))
+                nmax = max(nmax, np.max(nsrc))
+                noisy_spectra = output[0]['flux_calibration'][waves,fiber] * ((output[0]['num_source_electrons'][waves,fiber] + np.random.normal(np.sqrt(output[0]['variance_electrons'][waves,fiber]))) / dwave)
+
+                cwave = np.delete(cwave, overlap_high) 
+                nsky = np.delete(nsky, overlap_high)
+                read_noise = np.delete(read_noise, overlap_high)
+                total_noise = np.delete(total_noise, overlap_high)
+                noisy_spectra = np.delete(noisy_spectra, overlap_high)
+
+                ndark_noisy = output[0]['flux_calibration'][waves,fiber] * ndark
+                nsrc_noisy = output[0]['flux_calibration'][waves,fiber] * nsrc
+
+                nsrc = np.delete(nsrc, overlap_high)
+                ndark = np.delete(ndark, overlap_high)
+                ndark_noisy = np.delete(ndark_noisy, overlap_high)
+                nsrc_noisy = np.delete(nsrc_noisy, overlap_high)
+
+                ax3.fill_between(
+                    cwave, ndark + nsky + nsrc, min_electrons, color='b',
+                    alpha=0.2, lw=0)
+                ax3.fill_between(
+                    cwave, ndark + nsrc, min_electrons, color='r', alpha=0.2, lw=0)
+                ax3.fill_between(
+                    cwave, ndark, min_electrons, color='k', alpha=0.2, lw=0)
+                ax3.scatter(cwave, total_noise, color='k', lw=0., s=0.5, alpha=0.5)
+
+                ax4.fill_between(
+                    cwave, ndark_noisy + nsrc_noisy, ymin, color='r', alpha=0.2, lw=0)
+                ax4.scatter(cwave, total_noise, color='k', lw=0., s=0.5, alpha=0.5)
+
+                line2, = ax3.plot(cwave, read_noise, color='k', ls='--', alpha=0.5)
+
+                line3, = ax4.plot(cwave, noisy_spectra, color='r')
+                
+                #Last Camera
+                
+                nsky_low = output[-1]['num_sky_electrons'][waves, fiber] / dwave
+                nsrc_low = output[-1]['num_source_electrons'][waves, fiber] / dwave
+                ndark_low = output[-1]['num_dark_electrons'][waves, fiber] / dwave
+                read_noise_low = (
+                    output[-1]['read_noise_electrons'][waves, fiber] / np.sqrt(dwave))
+
+                total_noise_low = (
+                    output[-1]['flux_calibration'][waves,fiber] * np.sqrt(output[-1]['variance_electrons'][waves, fiber] / dwave))
+
+                noisy_spectra_low = np.zeros((len(output[i-1]['wavelength']), 1))
+                nmax_low = max(nmax, np.max(nsrc))
+                noisy_spectra_low = output[-1]['flux_calibration'][waves,fiber] * ((output[-1]['num_source_electrons'][waves,fiber] + np.random.normal(np.sqrt(output[-1]['variance_electrons'][waves,fiber]))) / dwave)
+
+                cwave_low = np.delete(cwave_low, overlap_low) 
+                nsky_low = np.delete(nsky, overlap_low)
+                read_noise_low = np.delete(read_noise, overlap_low)
+                total_noise_low = np.delete(total_noise, overlap_low)
+                noisy_spectra_low = np.delete(noisy_spectra, overlap_low)
+
+                ndark_noisy_low = output[-1]['flux_calibration'][waves,fiber] * ndark_low
+                nsrc_noisy_low = output[-1]['flux_calibration'][waves,fiber] * nsrc_low
+
+                nsrc_low = np.delete(nsrc, overlap_low)
+                ndark_low = np.delete(ndark, overlap_low)
+                ndark_noisy_low = np.delete(ndark_noisy, overlap_low)
+                nsrc_noisy_low = np.delete(nsrc_noisy, overlap_low)
+
+                ax3.fill_between(
+                    cwave_low, ndark_low + nsky_low + nsrc_low, min_electrons, color='b',
+                    alpha=0.2, lw=0)
+                ax3.fill_between(
+                    cwave_low, ndark_low + nsrc_low, min_electrons, color='r', alpha=0.2, lw=0)
+                ax3.fill_between(
+                    cwave_low, ndark_low, min_electrons, color='k', alpha=0.2, lw=0)
+                ax3.scatter(cwave_low, total_noise_low, color='k', lw=0., s=0.5, alpha=0.5)
+
+                ax4.fill_between(
+                    cwave_low, ndark_noisy_low + nsrc_noisy_low, ymin, color='r', alpha=0.2, lw=0)
+                ax4.scatter(cwave_low, total_noise_low, color='k', lw=0., s=0.5, alpha=0.5)
+
+                line2, = ax3.plot(cwave_low, read_noise_low, color='k', ls='--', alpha=0.5)
+
+                line3, = ax4.plot(cwave_low, noisy_spectra_low, color='r')
+
+
+        if camera_output:
+                # This kludge is because the label arg to fill_between() does not
+                # propagate to legend() in matplotlib < 1.5.
+
+                line1, = ax3.plot([], [], 'k-')
+                dark_fill = Rectangle((0, 0), 1, 1, fc='k', alpha=0.2)
+                ax3.legend(
+                    (sky_fill, src_fill, dark_fill, line1, line2),
+                    ('Sky detected', 'Source detected', 'Dark current',
+                     'RMS total noise', 'RMS read noise'),
+                    loc='best', fancybox=True, framealpha=0.5, ncol=5,
+                    fontsize=label_size)
+
+                ax3.set_ylim(min_electrons, 2e2 * min_electrons)
+                ax3.set_yscale('log')
+                ax3.set_ylabel('Mean electrons / {0}'.format(waveunit))
+                ax3.set_xlim(wave[0], wave[-1])
+                ax3.set_xlabel('Wavelength [{0}]'.format(waveunit))
+
+                ax4.legend(
+                    (src_fill, line1, line3),
+                    ('Source detected', 'RMS total noise', 'Noisy Spectra'),
+                    loc='best', fancybox=True, framealpha=0.5, ncol=3,
+                    fontsize=label_size)           
+
+                ax4.set_ylim(ymin, ymax)
+                ax4.set_yscale('log')
+                ax4.set_ylabel('Flux [{0}]'.format(fluxunit))
+                ax4.set_xlim(wave[0], wave[-1])
+                ax4.set_xlabel('Wavelength [{0}]'.format(waveunit))
+
+        # Remove x-axis ticks on the upper panels.
+        plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
+
+        fig.patch.set_facecolor('white')
+        plt.tight_layout()
+
+
+
+                
                
 
 
